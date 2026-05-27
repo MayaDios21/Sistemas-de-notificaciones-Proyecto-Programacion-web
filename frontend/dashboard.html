@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notificaciones — Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><path d='M8 10h16M8 16h10M8 22h13' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ── Header ── -->
+    <header>
+      <div class="header-eyebrow">
+        <span class="header-eyebrow-dot"></span>
+        Tiempo Real
+      </div>
+      <h1>Dashboard de Monitoreo</h1>
+      <p class="subtitle">Flujo de tareas y estado de workers en tiempo real</p>
+    </header>
+
+    <main>
+
+      <!-- ── Contadores de estado ── -->
+      <section aria-label="Resumen de estadísticas">
+        <div class="stats-panel">
+
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-pending" aria-hidden="true">&#8987;</div>
+            <div class="stat-content">
+              <h3>Pendientes</h3>
+              <p class="stat-value" id="pendingCount">0</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-processing" aria-hidden="true">&#8635;</div>
+            <div class="stat-content">
+              <h3>En Proceso</h3>
+              <p class="stat-value" id="processingCount">0</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-completed" aria-hidden="true">&#10003;</div>
+            <div class="stat-content">
+              <h3>Completadas</h3>
+              <p class="stat-value" id="completedCount">0</p>
+            </div>
+          </div>
+
+          <div class="stat-card">
+            <div class="stat-icon stat-icon-error" aria-hidden="true">&#10005;</div>
+            <div class="stat-content">
+              <h3>Con Error</h3>
+              <p class="stat-value" id="errorCount">0</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── Estado de conexión SSE ── -->
+      <section aria-label="Estado de conexión">
+        <div class="connection-status">
+          <div class="status-indicator">
+            <span class="status-dot connecting" id="connectionDot" role="img" aria-label="Estado de conexión"></span>
+            <span class="status-text" id="connectionText">Conectando al servidor...</span>
+          </div>
+          <span class="last-update">
+            Última actualización: <span id="lastUpdate">—</span>
+          </span>
+        </div>
+      </section>
+
+      <!-- ── Flujo Kanban de tareas ── -->
+      <section class="task-flow" aria-label="Flujo de tareas">
+        <h2>Flujo de Tareas</h2>
+
+        <div class="flow-container">
+
+          <!-- Pendientes -->
+          <div class="flow-column col-pending">
+            <div class="flow-column-header">
+              <span class="col-dot"></span>
+              <h3>Pendientes</h3>
+              <span class="col-count" id="pendingColCount">0</span>
+            </div>
+            <div class="flow-tasks" id="pendingTasks">
+              <p class="empty-flow">Sin tareas</p>
+            </div>
+          </div>
+
+          <div class="flow-arrow" aria-hidden="true">&#8594;</div>
+
+          <!-- En Proceso -->
+          <div class="flow-column col-processing">
+            <div class="flow-column-header">
+              <span class="col-dot"></span>
+              <h3>En Proceso</h3>
+              <span class="col-count" id="processingColCount">0</span>
+            </div>
+            <div class="flow-tasks" id="processingTasks">
+              <p class="empty-flow">Sin tareas</p>
+            </div>
+          </div>
+
+          <div class="flow-arrow" aria-hidden="true">&#8594;</div>
+
+          <!-- Completadas -->
+          <div class="flow-column col-completed">
+            <div class="flow-column-header">
+              <span class="col-dot"></span>
+              <h3>Completadas</h3>
+              <span class="col-count" id="completedColCount">0</span>
+            </div>
+            <div class="flow-tasks" id="completedTasks">
+              <p class="empty-flow">Sin tareas</p>
+            </div>
+          </div>
+
+          <div class="flow-arrow" aria-hidden="true">&#8594;</div>
+
+          <!-- Errores -->
+          <div class="flow-column col-error">
+            <div class="flow-column-header">
+              <span class="col-dot"></span>
+              <h3>Errores</h3>
+              <span class="col-count" id="errorColCount">0</span>
+            </div>
+            <div class="flow-tasks" id="errorTasks">
+              <p class="empty-flow">Sin tareas</p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- ── Historial de eventos ── -->
+      <section class="event-log" aria-label="Historial de eventos">
+        <h2>Historial de Eventos</h2>
+        <div class="log-controls">
+          <button class="btn btn-ghost btn-sm" id="clearLogBtn">Limpiar historial</button>
+          <button class="btn btn-ghost btn-sm" id="exportLogBtn">Exportar .txt</button>
+        </div>
+        <div class="log-container" id="eventLog" role="log" aria-live="polite">
+          <div class="log-entry">
+            <span class="log-time">—</span>
+            <span class="log-message">Esperando eventos del servidor...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Workers activos ── -->
+      <section class="workers-panel" aria-label="Workers activos">
+        <h2>Workers Activos</h2>
+        <div class="workers-grid" id="workersGrid">
+          <p class="empty-state">Esperando información de workers...</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── Navegación ── -->
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <a href="index.html" class="nav-link">
+        <span class="nav-icon">&#9997;</span>
+        <span>Enviar</span>
+      </a>
+      <a href="dashboard.html" class="nav-link active" aria-current="page">
+        <span class="nav-icon">&#9783;</span>
+        <span>Dashboard</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script src="dashboard.js"></script>
+</body>
+</html>

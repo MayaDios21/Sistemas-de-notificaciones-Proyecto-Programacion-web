@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notificaciones — Enviar Tarea</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%234f46e5'/><path d='M8 10h16M8 16h10M8 22h13' stroke='white' stroke-width='2.5' stroke-linecap='round'/></svg>">
+</head>
+<body>
+
+  <div class="container">
+
+    <!-- ── Header ── -->
+    <header>
+      <div class="header-eyebrow">
+        <span class="header-eyebrow-dot"></span>
+        Sistema Activo
+      </div>
+      <h1>Notificaciones Masivas</h1>
+      <p class="subtitle">Plataforma distribuida de procesamiento de tareas en tiempo real</p>
+    </header>
+
+    <main>
+
+      <!-- ── Formulario de envío ── -->
+      <section class="task-form-section">
+        <div class="section-header">
+          <h2>Nueva Tarea</h2>
+          <p>Los campos marcados son requeridos para el procesamiento</p>
+        </div>
+
+        <form id="taskForm" class="task-form" novalidate>
+
+          <div class="form-group">
+            <label for="taskTitle">Título <span style="color:var(--s-error-text)">*</span></label>
+            <input
+              type="text"
+              id="taskTitle"
+              name="title"
+              placeholder="Ej: Procesar lote de usuarios activos"
+              required
+              minlength="3"
+              autocomplete="off"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="taskDescription">Descripción <span style="color:var(--s-error-text)">*</span></label>
+            <textarea
+              id="taskDescription"
+              name="description"
+              placeholder="Describe el objetivo, datos de entrada y resultado esperado..."
+              required
+              minlength="10"
+            ></textarea>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="taskPriority">Prioridad</label>
+              <select id="taskPriority" name="priority">
+                <option value="baja">Baja</option>
+                <option value="media" selected>Media</option>
+                <option value="alta">Alta</option>
+                <option value="critica">Crítica</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="taskType">Tipo de Tarea</label>
+              <select id="taskType" name="type">
+                <option value="procesamiento">Procesamiento de Datos</option>
+                <option value="analisis">Análisis</option>
+                <option value="reporte">Generación de Reporte</option>
+                <option value="notificacion">Envío de Notificación</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <span class="btn-text">Enviar Tarea</span>
+              <span class="btn-loader" id="btnLoader"></span>
+            </button>
+            <button type="reset" class="btn btn-ghost">Limpiar</button>
+          </div>
+
+        </form>
+
+        <div id="responseMessage" class="response-message" role="alert"></div>
+      </section>
+
+      <!-- ── Tareas recientes ── -->
+      <section class="recent-tasks-section">
+        <div class="section-header" style="margin-bottom: var(--sp-5);">
+          <h2>Tareas Recientes</h2>
+        </div>
+        <div id="recentTasksList" class="tasks-list">
+          <p class="empty-state">Aún no hay tareas registradas. Envía tu primera tarea.</p>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ── Navegación ── -->
+    <nav class="bottom-nav" aria-label="Navegación principal">
+      <a href="index.html" class="nav-link active" aria-current="page">
+        <span class="nav-icon">&#9997;</span>
+        <span>Enviar</span>
+      </a>
+      <a href="dashboard.html" class="nav-link">
+        <span class="nav-icon">&#9783;</span>
+        <span>Dashboard</span>
+      </a>
+    </nav>
+
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
