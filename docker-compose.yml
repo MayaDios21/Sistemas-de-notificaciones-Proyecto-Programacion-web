@@ -1,0 +1,95 @@
+version: '3.8'
+
+services:
+  # Backend FastAPI
+  backend:
+    build: ./backend
+    container_name: notification-backend
+    ports:
+      - "8000:8000"
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_REGION=${AWS_REGION}
+      - EMAIL_QUEUE_URL=${EMAIL_QUEUE_URL}
+      - SMS_QUEUE_URL=${SMS_QUEUE_URL}
+      - PUSH_QUEUE_URL=${PUSH_QUEUE_URL}
+      - AWS_CONFIG_FILE=/dev/null
+      - AWS_SHARED_CREDENTIALS_FILE=/dev/null
+    networks:
+      - notification-net
+    restart: unless-stopped
+
+  # Worker Email
+  worker-email:
+    build: ./workers
+    container_name: worker-email
+    command: python worker_email.py
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_REGION=${AWS_REGION}
+      - EMAIL_QUEUE_URL=${EMAIL_QUEUE_URL}
+      - AWS_CONFIG_FILE=/dev/null
+      - AWS_SHARED_CREDENTIALS_FILE=/dev/null
+    depends_on:
+      - backend
+    networks:
+      - notification-net
+    restart: unless-stopped
+
+  # Worker SMS
+  worker-sms:
+    build: ./workers
+    container_name: worker-sms
+    command: python worker_sms.py
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_REGION=${AWS_REGION}
+      - SMS_QUEUE_URL=${SMS_QUEUE_URL}
+      - AWS_CONFIG_FILE=/dev/null
+      - AWS_SHARED_CREDENTIALS_FILE=/dev/null
+    depends_on:
+      - backend
+    networks:
+      - notification-net
+    restart: unless-stopped
+
+  # Worker Push
+  worker-push:
+    build: ./workers
+    container_name: worker-push
+    command: python worker_push.py
+    environment:
+      - AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}
+      - AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}
+      - AWS_SESSION_TOKEN=${AWS_SESSION_TOKEN}
+      - AWS_REGION=${AWS_REGION}
+      - PUSH_QUEUE_URL=${PUSH_QUEUE_URL}
+      - AWS_CONFIG_FILE=/dev/null
+      - AWS_SHARED_CREDENTIALS_FILE=/dev/null
+    depends_on:
+      - backend
+    networks:
+      - notification-net
+    restart: unless-stopped
+
+  # Frontend Nginx
+  frontend:
+    build: ./frontend
+    container_name: notification-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - notification-net
+    restart: unless-stopped
+
+networks:
+  notification-net:
+    driver: bridge

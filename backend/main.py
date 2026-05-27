@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
@@ -6,6 +6,8 @@ import json
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+import asyncio
+from sse_starlette.sse import EventSourceResponse
 
 # Cargar variables de entorno
 load_dotenv()
@@ -178,6 +180,155 @@ async def get_notifications():
         "total": len(notifications_storage),
         "notifications": list(notifications_storage.values())
     }
+
+@app.get("/events")
+async def stream_events(request: Request):
+    """
+    Server-Sent Events endpoint para actualizar frontend en tiempo real
+    """
+    async def event_generator():
+        try:
+            while True:
+                # Verificar si el cliente sigue conectado
+                if await request.is_disconnected():
+                    print("Client disconnected from SSE")
+                    break
+                
+                # Enviar heartbeat cada 30 segundos
+                yield {
+                    "event": "heartbeat",
+                    "data": json.dumps({
+                        "timestamp": datetime.now().isoformat(),
+                        "active_connections": 1,
+                        "system_status": "operational"
+                    })
+                }
+                
+                await asyncio.sleep(30)
+                
+        except asyncio.CancelledError:
+            print("SSE connection cancelled")
+    
+    return EventSourceResponse(event_generator())
+
+
+@app.get("/queue-stats")
+async def get_queue_stats():
+    """
+    Obtener estadísticas de las colas SQS
+    """
+    try:
+        sqs = get_sqs_client()
+        stats = {}
+        
+        for queue_name, queue_url in QUEUES.items():
+            if queue_url:
+                try:
+                    # Obtener atributos de la cola
+                    response = sqs.get_queue_attributes(
+                        QueueUrl=queue_url,
+                        AttributeNames=['ApproximateNumberOfMessages', 'ApproximateNumberOfMessagesNotVisible']
+                    )
+                    
+                    stats[queue_name] = {
+                        'messages_available': int(response['Attributes'].get('ApproximateNumberOfMessages', 0)),
+                        'messages_in_flight': int(response['Attributes'].get('ApproximateNumberOfMessagesNotVisible', 0))
+                    }
+                except Exception as e:
+                    stats[queue_name] = {
+                        'error': str(e)
+                    }
+        
+        return {
+            "queues": stats,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting queue stats: {str(e)}")
+
+@app.post("/api/tasks")
+async def create_task(task: dict):
+    """
+    Endpoint compatible con el frontend del compañero
+    """
+    try:
+        # Mapear campos del frontend al formato del backend
+        tipo = task.get('tipo', 'email').lower()
+        
+        # Validar tipo
+        if tipo not in QUEUES:
+            tipo = 'email'  # Default
+        
+        queue_url = QUEUES[tipo]
+        
+        message_body = {
+            'tipo': tipo,
+            'destinatario': task.get('titulo', 'N/A'),
+            'mensaje': task.get('descripcion', 'N/A'),
+            'prioridad': task.get('prioridad', 'Media'),
+            'timestamp': datetime.now().isoformat()
+        }
+        
+        sqs = get_sqs_client()
+        response = sqs.send_message(
+            QueueUrl=queue_url,
+            MessageBody=json.dumps(message_body)
+        )
+        
+        message_id = response['MessageId']
+        
+        return {
+            "id": message_id,
+            "status": "pending",
+            "titulo": task.get('titulo'),
+            "descripcion": task.get('descripcion'),
+            "tipo": tipo,
+            "timestamp": datetime.now().isoformat()
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/tasks")
+async def get_tasks():
+    """
+    Obtener lista de tareas
+    """
+    return {
+        "tasks": list(notifications_storage.values()),
+        "total": len(notifications_storage)
+    }
+
+
+@app.get("/api/tasks/events")
+async def task_events(request: Request):
+    """
+    SSE endpoint compatible con el frontend del compañero
+    """
+    async def event_generator():
+        try:
+            while True:
+                if await request.is_disconnected():
+                    break
+                
+                yield {
+                    "event": "heartbeat",
+                    "data": json.dumps({
+                        "timestamp": datetime.now().isoformat(),
+                        "active_workers": 3,
+                        "system_status": "operational",
+                        "total_tasks": len(notifications_storage)
+                    })
+                }
+                
+                await asyncio.sleep(5)
+                
+        except asyncio.CancelledError:
+            pass
+    
+    return EventSourceResponse(event_generator())
 
 # Ejecutar con: uvicorn main:app --reload
 if __name__ == "__main__":

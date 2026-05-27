@@ -7,6 +7,7 @@ from datetime import datetime
 
 # Cargar variables de entorno
 load_dotenv(dotenv_path="../.env")
+load_dotenv(dotenv_path="../.env")
 
 # Deshabilitar archivos de configuración de AWS (usar solo .env)
 os.environ['AWS_CONFIG_FILE'] = '/dev/null'

@@ -10,7 +10,7 @@
 'use strict';
 
 // ── Configuración de API ───────────────────────────────────────────────────
-const API_BASE    = 'http://localhost:8000';
+const API_BASE    = 'http://100.51.182.45:8000';
 const TASKS_URL   = `${API_BASE}/api/tasks`;
 
 // ── Referencias DOM ────────────────────────────────────────────────────────
