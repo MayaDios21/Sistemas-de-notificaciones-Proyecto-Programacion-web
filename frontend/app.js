@@ -40,6 +40,8 @@ taskForm.addEventListener('submit', async (e) => {
   const payload = {
     title:       document.getElementById('taskTitle').value.trim(),
     description: document.getElementById('taskDescription').value.trim(),
+    recipient:   document.getElementById('taskRecipient').value.trim(),
+    message:     document.getElementById('taskMessage').value.trim(),
     priority:    document.getElementById('taskPriority').value,
     type:        document.getElementById('taskType').value,
     created_at:  new Date().toISOString(),
@@ -163,6 +165,8 @@ function buildTaskCard(task) {
         </span>
       </div>
       <p class="task-description">${esc(task.description)}</p>
+      ${task.recipient ? `<p class="task-recipient"><strong>Para:</strong> ${esc(task.recipient)}</p>` : ''}
+      ${task.message ? `<p class="task-message"><strong>Mensaje:</strong> ${esc(task.message)}</p>` : ''}
       <div class="task-meta">
         <span class="badge priority-${esc(task.priority)}">${priorityLabel}</span>
         <span class="badge badge-type">${typeLabel}</span>

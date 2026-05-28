@@ -538,6 +538,25 @@ section h2 {
   margin-bottom: var(--sp-4);
 }
 
+.task-recipient,
+.task-message {
+  color: var(--text-body);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  margin-bottom: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--bg-subtle);
+  border-radius: var(--r-sm);
+  border-left: 2px solid var(--accent);
+}
+
+.task-recipient strong,
+.task-message strong {
+  color: var(--text-heading);
+  font-weight: 600;
+  margin-right: var(--sp-1);
+}
+
 .task-meta {
   display: flex;
   flex-wrap: wrap;
