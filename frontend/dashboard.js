@@ -13,7 +13,7 @@
 'use strict';
 
 // ── Configuración ──────────────────────────────────────────────────────────
-const API_BASE  = 'http://3.90.199.82:8000';
+const API_BASE  = 'http://3.80.112.131:8000';
 const SSE_URL   = `${API_BASE}/api/tasks/events`;   // Endpoint SSE del backend
 const RECONNECT_DELAY_MS = 5000;                    // Tiempo entre reintentos de conexión
 

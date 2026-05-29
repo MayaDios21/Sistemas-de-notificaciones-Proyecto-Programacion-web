@@ -16,6 +16,18 @@ load_dotenv()
 os.environ['AWS_CONFIG_FILE'] = '/dev/null'
 os.environ['AWS_SHARED_CREDENTIALS_FILE'] = '/dev/null'
 
+# Cola de eventos SSE para broadcast
+from asyncio import Queue as AsyncQueue
+sse_clients: list[AsyncQueue] = []
+
+async def notify_clients(data: dict):
+    """Enviar evento a todos los clientes SSE conectados"""
+    for client_queue in sse_clients:
+        try:
+            await client_queue.put(data)
+        except Exception:
+            pass
+
 # Crear app FastAPI
 app = FastAPI(
     title="Notification System API",
@@ -249,44 +261,57 @@ async def get_queue_stats():
 
 @app.post("/api/tasks")
 async def create_task(task: dict):
-    """
-    Endpoint compatible con el frontend del compañero
-    """
     try:
-        # Mapear campos del frontend al formato del backend
-        tipo = task.get('tipo', 'email').lower()
-        
-        # Validar tipo
-        if tipo not in QUEUES:
-            tipo = 'email'  # Default
-        
+        # Mapear tipo de notificación
+        task_type = task.get('type', 'procesamiento')
+        tipo_map = {
+            'procesamiento': 'email',
+            'analisis': 'sms',
+            'reporte': 'push',
+            'notificacion': 'email'
+        }
+        tipo = tipo_map.get(task_type, 'email')
         queue_url = QUEUES[tipo]
-        
+
+        # Crear mensaje completo
+        message_id = str(__import__('uuid').uuid4())
         message_body = {
+            'id': message_id,
+            'title': task.get('title', 'N/A'),
+            'description': task.get('description', 'N/A'),
+            'recipient': task.get('recipient', 'N/A'),
+            'message': task.get('message', 'N/A'),
+            'priority': task.get('priority', 'media'),
+            'type': task_type,
             'tipo': tipo,
-            'destinatario': task.get('titulo', 'N/A'),
-            'mensaje': task.get('descripcion', 'N/A'),
-            'prioridad': task.get('prioridad', 'Media'),
+            'created_at': task.get('created_at', datetime.now().isoformat()),
+            'status': 'pendiente',
             'timestamp': datetime.now().isoformat()
         }
-        
+
+        # Enviar a SQS
         sqs = get_sqs_client()
         response = sqs.send_message(
             QueueUrl=queue_url,
             MessageBody=json.dumps(message_body)
         )
-        
-        message_id = response['MessageId']
-        
+
+        # Guardar en storage
+        notifications_storage[message_id] = message_body
+
+        # Notificar via SSE a todos los clientes conectados
+        await notify_clients({
+            "task": {**message_body, "status": "pendiente"}
+        })
+
         return {
             "id": message_id,
-            "status": "pending",
-            "titulo": task.get('titulo'),
-            "descripcion": task.get('descripcion'),
-            "tipo": tipo,
+            "status": "pendiente",
+            "title": task.get('title'),
+            "queue": tipo,
             "timestamp": datetime.now().isoformat()
         }
-        
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
